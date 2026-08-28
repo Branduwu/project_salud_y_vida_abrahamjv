@@ -5,6 +5,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { listPublicBranches } from "@/server/institutional-repository";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Sucursales",
   description: "Ubicación de Salud y Vida en Texcoco.",

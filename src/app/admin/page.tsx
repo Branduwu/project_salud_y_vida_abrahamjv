@@ -2,6 +2,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { requireAdmin } from "@/server/dal";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage() {
   const user = await requireAdmin();
   return (

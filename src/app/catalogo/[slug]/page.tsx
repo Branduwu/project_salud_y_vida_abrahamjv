@@ -8,6 +8,9 @@ import { AddToCartForm } from "@/components/add-to-cart-form";
 import { formatPrice } from "@/lib/catalog";
 import { getPublicProductBySlug } from "@/server/catalog-repository";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type ProductPageProps = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {

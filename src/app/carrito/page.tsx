@@ -7,6 +7,9 @@ import { formatPrice } from "@/lib/catalog";
 import { getCartSummary } from "@/server/cart-service";
 import { requireUser } from "@/server/dal";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export default async function CartPage() {
   const user = await requireUser();
   const cart = await getCartSummary(user.id);

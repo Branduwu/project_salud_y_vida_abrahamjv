@@ -6,6 +6,9 @@ import { SiteHeader } from "@/components/site-header";
 import { getFeaturedProducts } from "@/server/catalog-repository";
 import { listPublicBranches } from "@/server/institutional-repository";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [featuredProducts, branches] = await Promise.all([
     getFeaturedProducts(),

@@ -7,6 +7,9 @@ import { SiteHeader } from "@/components/site-header";
 import { parseCatalogQuery, type CatalogSearchParams } from "@/lib/catalog";
 import { getCatalogFacets, listPublicProducts } from "@/server/catalog-repository";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Catálogo",
   description: "Explora armazones ópticos y consulta su disponibilidad por sucursal.",

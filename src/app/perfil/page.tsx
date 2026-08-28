@@ -3,6 +3,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { requireUser } from "@/server/dal";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export default async function ProfilePage() {
   const user = await requireUser();
   return (

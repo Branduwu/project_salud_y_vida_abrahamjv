@@ -2,6 +2,9 @@
   "name": "salud-y-vida",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22.14.0 <25"
+  },
   "type": "module",
   "packageManager": "npm@11.8.0",
   "scripts": {
