@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: saludyvida_dev
+      POSTGRES_USER: saludyvida
+      POSTGRES_PASSWORD: saludyvida_dev
+    ports:
+      # El 5432 local ya puede estar en uso por otra instalación de PostgreSQL.
+      # El contenedor siempre escucha en 5432; la aplicación usa el 5433 del host.
+      - "5433:5432"
+    volumes:
+      - salud_y_vida_postgres:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/01-create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saludyvida -d saludyvida_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  salud_y_vida_postgres:
