@@ -56,6 +56,29 @@ Nunca ejecutes `db:seed` en producción: crea usuarios y productos demo.
 
 ## Vercel
 
+### Legacy deployment
+
+| Ajuste         | Valor                          |
+| -------------- | ------------------------------ |
+| Framework      | Vite                           |
+| Source         | `legacy/vite-frontend`         |
+| Status         | Temporary legacy deployment    |
+| Production use | No after the Next.js migration |
+
+`https://vite-frontend-one.vercel.app/` corresponde a este deployment legacy y debe permanecer intacto mientras se valida el proyecto nuevo. No lo uses para smoke tests de la aplicación Next.js.
+
+### New production deployment
+
+| Ajuste         | Valor                  |
+| -------------- | ---------------------- |
+| Framework      | Next.js                |
+| Source         | Repository root        |
+| Vercel project | `salud-y-vida`         |
+| Root           | `.`                    |
+| Status         | Pending production URL |
+
+> **Warning:** Do not configure Vercel Root Directory as `legacy/vite-frontend` for the new project. The correct build log contains `next build`; a log containing `vite build` is the legacy application. Stop before creating production test data if the deployment identity does not match Next.js.
+
 ### Project setup
 
 La recomendación es crear un proyecto Vercel **nuevo** para la aplicación actual, por ejemplo `salud-y-vida`. El proyecto `vite-frontend` se conserva sin borrar hasta que el nuevo deployment esté validado.
