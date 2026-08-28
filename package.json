@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "engines": {
-    "node": ">=22.14.0 <25"
+    "node": "22.x"
   },
   "type": "module",
   "packageManager": "npm@11.8.0",
@@ -26,6 +26,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed-runner.ts",
+    "admin:create": "tsx src/cli/admin-create.ts",
     "db:reset": "tsx src/db/reset-runner.ts",
     "db:test:migrate": "node --env-file=.env.test ./node_modules/drizzle-kit/bin.cjs migrate",
     "db:test:reset": "node --env-file=.env.test ./node_modules/tsx/dist/cli.mjs src/db/reset-runner.ts"
