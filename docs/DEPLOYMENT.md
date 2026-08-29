@@ -16,13 +16,26 @@ Las pruebas usan la base aislada `saludyvida_test` mediante `TEST_DATABASE_URL`/
 
 ## Production
 
-1. Provisiona un PostgreSQL gestionado compatible con PostgreSQL estándar.
-2. Configura `DATABASE_URL` en un entorno controlado para tareas operativas.
-3. Ejecuta `npm run db:migrate` una vez, como paso explícito y controlado contra la URL de producción.
-4. Crea o promueve el primer administrador de forma controlada con `npm run admin:create`.
-5. Configura los secretos runtime en la plataforma de despliegue y despliega.
+1. Importa el repositorio GitHub en Vercel como proyecto Next.js con Root Directory `.`.
+2. Añade **Neon** desde Vercel Marketplace y conéctalo al proyecto; la integración inyecta `DATABASE_URL` en Production.
+3. Configura una única vez `AUTH_SECRET` en Vercel Production (32 bytes o más) y no lo regeneres entre deploys.
+4. Haz Deploy. El build de Production ejecuta automáticamente `db:setup` antes de `next build`.
+5. Crea el primer administrador con `npm run admin:create` desde el flujo controlado de Neon/Vercel, una sola vez.
 
-No se ejecutan migraciones por request ni durante `next build`. No ejecutes `db:seed` en producción: el seed actual crea usuarios y catálogo demo.
+Automatizado por el deploy de Production: migrations, schema, roles, categoría, ocho productos, ocho imágenes, sucursal y validación. El inventario se mantiene en `0` hasta una decisión comercial. **Nunca** ejecutes `db:seed` en Production.
+
+## Database commands
+
+| Command                | Responsibility                                                                                                                                       | Production use                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `npm run db:migrate`   | Apply only pending versioned Drizzle migrations.                                                                                                     | Yes, when a schema-only migration is required.            |
+| `npm run db:setup`     | Explicit PostgreSQL setup: connection check, migrations, base roles, approved catalog/images and verified branch; then validation. It is idempotent. | Automatic in a Vercel Production build; optional locally. |
+| `npm run db:seed`      | DEV/TEST fixtures: demo users, demo admin, demo password and demo inventory.                                                                         | **No.**                                                   |
+| `npm run admin:create` | Create or promote the real initial administrator.                                                                                                    | Yes, from a controlled environment only.                  |
+
+`db:setup` never creates users, password hashes, sessions, carts, orders, contact messages, Playwright fixtures or inventory. The current inventory values were demo values, not verified commercial stock; therefore the setup inserts **no inventory** and all catalog items remain unavailable until a business owner supplies valid stock. **NEEDS BUSINESS DECISION.**
+
+The setup data and the complete PostgreSQL schema live in versioned `src/db/schema.ts`, `drizzle/` migrations, and `src/db/production-data.ts`. No SQLite database or physical database file is used or created.
 
 ## Required environment variables
 
@@ -44,15 +57,14 @@ No existen variables `NEXT_PUBLIC_*` requeridas. Nunca publiques `DATABASE_URL`,
 
 `npm run admin:create` es una herramienta CLI server-side: no existe endpoint HTTP, Server Action ni ruta pública para crear o promover administradores. Debe ejecutarse sólo desde una consola o job controlado que ya tenga acceso a la base remota.
 
-1. Provisiona PostgreSQL gestionado y configura `DATABASE_URL` en el entorno controlado.
-2. Ejecuta `npm run db:migrate` contra esa base.
-3. Inyecta temporalmente `ADMIN_BOOTSTRAP_EMAIL` y ejecuta `npm run admin:create` para promover una cuenta existente. Esta operación es idempotente.
-4. Si la cuenta aún no existe, inyecta además `ADMIN_BOOTSTRAP_NAME` y `ADMIN_BOOTSTRAP_PASSWORD` mediante un gestor de secretos o variables temporales de la sesión; después ejecuta el mismo comando. La contraseña nunca se pasa como argumento de shell, no se imprime y no debe guardarse en `.env` ni en Netlify.
-5. Elimina las tres variables temporales del entorno controlado y despliega la aplicación.
+1. Después del primer deploy, abre la integración Neon/Vercel en un entorno controlado donde `DATABASE_URL` ya esté disponible.
+2. Inyecta temporalmente `ADMIN_BOOTSTRAP_EMAIL` y ejecuta `npm run admin:create` para promover una cuenta existente. Esta operación es idempotente.
+3. Si la cuenta aún no existe, inyecta además `ADMIN_BOOTSTRAP_NAME` y `ADMIN_BOOTSTRAP_PASSWORD` mediante un gestor de secretos o variables temporales de la sesión; después ejecuta el mismo comando. La contraseña nunca se pasa como argumento de shell, no se imprime y no debe guardarse en `.env` ni en Vercel.
+4. Elimina las tres variables temporales al terminar.
 
 El comando crea los roles de sistema `ADMIN` y `USER` si la base recién migrada aún no los contiene; crea una cuenta nueva o agrega `ADMIN` a una cuenta existente. Repetirlo no duplica la asignación por la llave primaria de `user_roles`.
 
-Nunca ejecutes `db:seed` en producción: crea usuarios y productos demo.
+Nunca ejecutes `db:seed` en producción: crea usuarios, administrador, productos de fixture e inventario demo.
 
 ## Vercel
 
@@ -83,31 +95,30 @@ Nunca ejecutes `db:seed` en producción: crea usuarios y productos demo.
 
 La recomendación es crear un proyecto Vercel **nuevo** para la aplicación actual, por ejemplo `salud-y-vida`. El proyecto `vite-frontend` se conserva sin borrar hasta que el nuevo deployment esté validado.
 
-| Ajuste            | Valor                                      |
-| ----------------- | ------------------------------------------ |
-| Repository        | `Branduwu/project_salud_y_vida_abrahamjv`  |
-| Production Branch | `main`                                     |
-| Root Directory    | `.` o vacío/default (raíz del repositorio) |
-| Framework Preset  | `Next.js`                                  |
-| Install Command   | automático / `npm install`                 |
-| Build Command     | automático / `npm run build`               |
-| Output Directory  | automático, sin override                   |
-| Node.js Version   | `22.x`                                     |
+| Ajuste            | Valor                                                |
+| ----------------- | ---------------------------------------------------- |
+| Repository        | `Branduwu/project_salud_y_vida_abrahamjv`            |
+| Production Branch | `main`                                               |
+| Root Directory    | `.` o vacío/default (raíz del repositorio)           |
+| Framework Preset  | `Next.js`                                            |
+| Install Command   | automático / `npm install`                           |
+| Build Command     | `npm run build:vercel` (versionado en `vercel.json`) |
+| Output Directory  | automático, sin override                             |
+| Node.js Version   | `22.x`                                               |
 
-No crear `vercel.json`: Next.js se detecta automáticamente desde el `package.json` raíz y una configuración adicional podría ocultar el error de Root Directory. En particular, no configures `dist`, `.next`, Vite ni `legacy/vite-frontend` como salida o directorio de build.
+`vercel.json` sólo fija el Build Command versionado; no modifica framework, Root Directory ni Output Directory. Next.js continúa detectándose automáticamente desde el `package.json` raíz. No configures `dist`, `.next`, Vite ni `legacy/vite-frontend` como salida o directorio de build.
 
 Vercel sólo selecciona versiones mayores de Node; `package.json` fija `22.x` para Vercel y `.nvmrc` conserva `22.14.0` para desarrollo local y Netlify. Vercel aplicará el parche de Node 22 disponible y soportado por la plataforma.
 
 ### Environment and production database
 
-Configura exclusivamente estas variables runtime permanentes en Vercel para Production (y Preview sólo si esa preview cuenta con una DB aislada):
+Configura Neon desde Marketplace para Production. La integración gestiona e inyecta `DATABASE_URL`; sólo confirma su presencia en Settings → Environment Variables, sin copiar su valor. Configura además este único secreto manual permanente:
 
-| Variable       | Required | Secret | Notes                                                 |
-| -------------- | -------- | ------ | ----------------------------------------------------- |
-| `DATABASE_URL` | Sí       | Sí     | URL de PostgreSQL gestionado, nunca `localhost:5433`. |
-| `AUTH_SECRET`  | Sí       | Sí     | Secreto de firma de al menos 32 bytes.                |
+| Variable      | Required | Secret | Notes                                  |
+| ------------- | -------- | ------ | -------------------------------------- |
+| `AUTH_SECRET` | Sí       | Sí     | Secreto de firma de al menos 32 bytes. |
 
-No configures como secretos permanentes `TEST_DATABASE_URL`, `PLAYWRIGHT_BASE_URL`, `CI` ni `ADMIN_BOOTSTRAP_*`. La aplicación usa PostgreSQL estándar mediante `DATABASE_URL`; no está ligada a Neon, Supabase ni Railway.
+No configures como secretos permanentes `TEST_DATABASE_URL`, `PLAYWRIGHT_BASE_URL`, `CI` ni `ADMIN_BOOTSTRAP_*`. La aplicación usa PostgreSQL estándar mediante `DATABASE_URL`; Neon es únicamente infraestructura y no existe acoplamiento de aplicación a su SDK o API.
 
 Para generar `AUTH_SECRET` en una estación controlada sin persistirlo en el repositorio, ejecuta `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` y guarda sólo el resultado en el gestor de secretos de Vercel.
 
@@ -115,18 +126,13 @@ Para generar `AUTH_SECRET` en una estación controlada sin persistirlo en el rep
 
 Las rutas con DB declaran runtime Node y no Edge: `/`, `/catalogo`, `/catalogo/[slug]`, `/carrito`, `/perfil`, `/admin`, `/sucursales` y `/contacto`. Server Components, Server Actions, cookies HttpOnly, auth y RBAC son compatibles con ese runtime.
 
-### Deployment order
+### Automated Production build
 
-1. Crea PostgreSQL gestionado y obtiene su `DATABASE_URL`.
-2. En un entorno controlado configura temporalmente `DATABASE_URL`.
-3. Ejecuta `npm run db:migrate`.
-4. Ejecuta `npm run admin:create` con las variables temporales `ADMIN_BOOTSTRAP_*` necesarias.
-5. Elimina `ADMIN_BOOTSTRAP_*` del entorno controlado.
-6. Configura `DATABASE_URL` y `AUTH_SECRET` en Vercel.
-7. Despliega desde `main`.
-8. No ejecutes `npm run db:seed`.
+`vercel.json` ejecuta `npm run build:vercel`. Cuando Vercel expone `VERCEL_ENV=production`, el wrapper requiere `DATABASE_URL`, ejecuta `npm run db:setup` y sólo después ejecuta un único `next build`. En `preview`, `development` o fuera de Vercel sólo se ejecuta `next build`.
 
-Las migraciones no se ejecutan durante import, `next build`, request ni deploy automáticamente.
+Si falta `DATABASE_URL` o falla setup, el build falla con un mensaje sanitizado y no publica una aplicación rota. El wrapper no ejecuta `db:seed` ni `admin:create`, y elimina URLs y secretos conocidos de su salida.
+
+`db:setup` toma un bloqueo asesor de PostgreSQL durante migrations y datos iniciales. Así serializa dos builds de Production concurrentes; el journal de Drizzle registra migrations aplicadas y las migrations actuales son transaccionales. Una falla no continúa al build; un retry espera el bloqueo y retoma desde el journal. No añadas migrations no transaccionales sin revisar esta garantía.
 
 ### Production smoke test
 

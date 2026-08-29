@@ -169,7 +169,8 @@ export const branches = pgTable("branches", {
   slug: varchar("slug", { length: 120 }).notNull().unique(),
   address: text("address").notNull(),
   phone: varchar("phone", { length: 30 }),
-  openingHours: text("opening_hours").notNull(),
+  // Horarios no se publican hasta recibir validación comercial.
+  openingHours: text("opening_hours"),
   isActive: boolean("is_active").default(true).notNull(),
   ...timestamps,
 });

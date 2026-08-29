@@ -1,0 +1,1 @@
+ALTER TABLE "branches" ALTER COLUMN "opening_hours" DROP NOT NULL;
